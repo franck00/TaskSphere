@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import TaskCard from '../../components/TaskCard';
-import { Button } from '@/components/ui/button';
+import { DndProvider } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
+import Column from '../../components/Column';
 
 interface Task {
   id: string;
@@ -57,10 +58,39 @@ const KanbanPage = () => {
     fetchTasks();
   }, [router]);
 
-  const renderTasks = (status: 'todo' | 'in-progress' | 'done') => {
-    return tasks
-      .filter((task) => task.status === status)
-      .map((task) => <TaskCard key={task.id} {...task} />);
+  const handleDrop = async (id: string, status: 'todo' | 'in-progress' | 'done') => {
+    const token = localStorage.getItem('token');
+    const task = tasks.find((t) => t.id === id);
+    if (!task || !token) return;
+
+    const updatedTask = { ...task, status };
+
+    setTasks((prevTasks) =>
+      prevTasks.map((t) => (t.id === id ? updatedTask : t))
+    );
+
+    try {
+      const response = await fetch(`http://localhost:8000/tasks/${id}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({ status }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to update task status');
+      }
+    } catch (e: any) {
+      setError(e.message);
+      // Revert the state if the API call fails
+      setTasks((prevTasks) =>
+        prevTasks.map((t) => (t.id === id ? task : t))
+      );
+    }
   };
 
   if (loading) {
@@ -72,29 +102,28 @@ const KanbanPage = () => {
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center p-24">
+    <DndProvider backend={HTML5Backend}>
+      <main className="flex min-h-screen flex-col items-center p-24">
         <h1 className="text-4xl font-bold mb-8">Kanban Board</h1>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full max-w-6xl">
-            <div className="p-4 bg-gray-100 rounded-lg">
-                <h2 className="text-2xl font-bold mb-4">To Do</h2>
-                <div className="flex flex-col gap-4">
-                    {renderTasks('todo')}
-                </div>
-            </div>
-            <div className="p-4 bg-gray-100 rounded-lg">
-                <h2 className="text-2xl font-bold mb-4">In Progress</h2>
-                <div className="flex flex-col gap-4">
-                    {renderTasks('in-progress')}
-                </div>
-            </div>
-            <div className="p-4 bg-gray-100 rounded-lg">
-                <h2 className="text-2xl font-bold mb-4">Done</h2>
-                <div className="flex flex-col gap-4">
-                    {renderTasks('done')}
-                </div>
-            </div>
+          <Column
+            status="todo"
+            tasks={tasks.filter((t) => t.status === 'todo')}
+            onDrop={handleDrop}
+          />
+          <Column
+            status="in-progress"
+            tasks={tasks.filter((t) => t.status === 'in-progress')}
+            onDrop={handleDrop}
+          />
+          <Column
+            status="done"
+            tasks={tasks.filter((t) => t.status === 'done')}
+            onDrop={handleDrop}
+          />
         </div>
-    </main>
+      </main>
+    </DndProvider>
   );
 };
 
