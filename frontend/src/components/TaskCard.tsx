@@ -1,4 +1,5 @@
 import React from 'react';
+import { useDrag } from 'react-dnd';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
@@ -12,6 +13,14 @@ interface TaskCardProps {
 }
 
 const TaskCard: React.FC<TaskCardProps> = ({ id, title, description, status, priority, due_date }) => {
+  const [{ isDragging }, drag] = useDrag(() => ({
+    type: 'task',
+    item: { id },
+    collect: (monitor) => ({
+      isDragging: !!monitor.isDragging(),
+    }),
+  }));
+
   const getStatusVariant = (currentStatus: string) => {
     switch (currentStatus) {
       case 'todo':
@@ -39,7 +48,10 @@ const TaskCard: React.FC<TaskCardProps> = ({ id, title, description, status, pri
   };
 
   return (
-    <Card className="w-full">
+    <Card
+      ref={drag}
+      className={`w-full ${isDragging ? 'opacity-50' : 'opacity-100'}`}
+    >
       <CardHeader>
         <CardTitle>{title}</CardTitle>
         <CardDescription>{description}</CardDescription>
