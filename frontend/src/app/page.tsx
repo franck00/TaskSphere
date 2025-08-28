@@ -101,7 +101,12 @@ export default function Home() {
       <div className="w-full max-w-6xl">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-4xl font-bold">Your Tasks</h1>
-          <Button variant="outline" onClick={handleLogout}>Logout</Button>
+          <div className="flex gap-4">
+            <Link href="/kanban">
+                <Button variant="outline">Kanban View</Button>
+            </Link>
+            <Button variant="outline" onClick={handleLogout}>Logout</Button>
+          </div>
         </div>
         {error && <p className="text-red-500 mb-4">Error: {error}</p>}
         {tasks.length > 0 ? (

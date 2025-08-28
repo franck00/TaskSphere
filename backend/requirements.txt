@@ -5,3 +5,6 @@ SQLAlchemy
 Pydantic
 python-jose[cryptography]
 passlib[bcrypt]
+pytest
+httpx
+pytest-cov
